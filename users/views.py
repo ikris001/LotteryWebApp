@@ -1,13 +1,12 @@
 # IMPORTS
 import logging
-from functools import wraps
 from datetime import datetime
 
+import pyotp
 from flask import Blueprint, render_template, flash, redirect, url_for, request, session
 from flask_login import current_user
 from flask_login import login_user, logout_user, login_required
 from werkzeug.security import check_password_hash
-import pyotp
 
 from app import db, requires_roles
 from models import User
@@ -54,9 +53,9 @@ def register():
     # if request method is GET or form not valid re-render signup page
     return render_template('register.html', form=form)
 
+
 @users_blueprint.route('/login', methods=['GET', 'POST'])
 def login():
-
     if not session.get('logins'):
         session['logins'] = 0
     elif session.get('logins') >= 3:
@@ -108,6 +107,7 @@ def logout():
     logging.warning('SECURITY - Log out [%s, %s, %s]', current_user.id, current_user.email, request.remote_addr)
     logout_user()
     return redirect(url_for('index'))
+
 
 # view user profile
 @users_blueprint.route('/profile')

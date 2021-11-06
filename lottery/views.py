@@ -1,6 +1,6 @@
 # IMPORTS
-import logging
 import copy
+
 from flask import Blueprint, render_template, request, flash
 from flask_login import login_required, current_user
 
@@ -105,5 +105,3 @@ def play_again():
 
     flash("All played draws deleted.")
     return lottery()
-
-

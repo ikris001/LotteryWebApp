@@ -1,18 +1,22 @@
 import base64
 from datetime import datetime
-from flask_login import UserMixin
+
 from Crypto.Protocol.KDF import scrypt
 from Crypto.Random import get_random_bytes
 from cryptography.fernet import Fernet
+from flask_login import UserMixin
 from werkzeug.security import generate_password_hash
+
 from app import db
 
 
 def encrypt(data, draw_key):
     return Fernet(draw_key).encrypt(bytes(data, 'utf-8'))
 
+
 def decrypt(data, draw_key):
     return Fernet(draw_key).decrypt(data).decode("utf-8")
+
 
 class User(db.Model, UserMixin):
     __tablename__ = 'users'
@@ -77,6 +81,7 @@ class Draw(db.Model):
     def view_draw(self, draw_key):
         self.draw = decrypt(self.draw, draw_key)
 
+
 def init_db():
     db.drop_all()
     db.create_all()
@@ -90,5 +95,3 @@ def init_db():
 
     db.session.add(admin)
     db.session.commit()
-
-

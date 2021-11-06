@@ -1,9 +1,11 @@
 # IMPORTS
+import copy
+
 from flask import Blueprint, render_template, request, flash
+from flask_login import login_required, current_user
+
 from app import db, requires_roles
 from models import User, Draw
-import copy
-from flask_login import login_required, current_user
 
 # CONFIG
 admin_blueprint = Blueprint('admin', __name__, template_folder='templates')
@@ -32,7 +34,6 @@ def view_all_users():
 @login_required
 @requires_roles('admin')
 def create_winning_draw():
-
     # get current winning draw
     current_winning_draw = Draw.query.filter_by(win=True).first()
     round = 1
@@ -54,7 +55,8 @@ def create_winning_draw():
     submitted_draw.strip()
 
     # create a new draw object with the form data.
-    new_winning_draw = Draw(user_id=current_user.id, draw=submitted_draw, win=True, round=round, draw_key=current_user.draw_key)
+    new_winning_draw = Draw(user_id=current_user.id, draw=submitted_draw, win=True, round=round,
+                            draw_key=current_user.draw_key)
 
     # add the new winning draw to the database
     db.session.add(new_winning_draw)
@@ -70,7 +72,6 @@ def create_winning_draw():
 @login_required
 @requires_roles('admin')
 def view_winning_draw():
-
     # get winning draw from DB
     current_winning_draw = Draw.query.filter_by(win=True).first()
 
@@ -92,7 +93,6 @@ def view_winning_draw():
 @login_required
 @requires_roles('admin')
 def run_lottery():
-
     # get current unplayed winning draw
     current_winning_draw = Draw.query.filter_by(win=True, played=False).first()
 
@@ -119,7 +119,6 @@ def run_lottery():
 
                 # if user draw matches current unplayed winning draw
                 if draw.draw == current_winning_draw.draw:
-
                     # add details of winner to list of results
                     results.append((current_winning_draw.round, draw.draw, draw.user_id, user.email))
 

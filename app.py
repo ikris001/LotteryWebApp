@@ -1,11 +1,13 @@
 # IMPORTS
 import logging
 import socket
-from flask_login import LoginManager, current_user
-from flask import Flask, render_template, request
-from flask_sqlalchemy import SQLAlchemy
 from functools import wraps
+
+from flask import Flask, render_template, request
+from flask_login import LoginManager, current_user
+from flask_sqlalchemy import SQLAlchemy
 from flask_talisman import Talisman
+
 
 # LOGGING
 class SecurityFilter(logging.Filter):
@@ -44,20 +46,23 @@ csp = {
 }
 talisman = Talisman(app, content_security_policy=csp)
 
+
 def requires_roles(*roles):
     def wrapper(f):
         @wraps(f)
         def wrapped(*args, **kwargs):
             if current_user.role not in roles:
                 logging.warning('SECURITY - Unauthorised access attempt [%s, %s, %s, %s]',
-                             current_user.id,
-                             current_user.email,
-                             current_user.role,
-                             request.remote_addr)
+                                current_user.id,
+                                current_user.email,
+                                current_user.role,
+                                request.remote_addr)
                 # Redirect the user to an unauthorised notice!
                 return render_template('403.html')
             return f(*args, **kwargs)
+
         return wrapped
+
     return wrapper
 
 
@@ -66,25 +71,31 @@ def requires_roles(*roles):
 def index():
     return render_template('index.html')
 
+
 @app.errorhandler(400)
 def page_forbidden(error):
-     return render_template('400.html'), 400
+    return render_template('400.html'), 400
+
 
 @app.errorhandler(403)
 def page_not_found(error):
-     return render_template('403.html'), 403
+    return render_template('403.html'), 403
+
 
 @app.errorhandler(404)
 def internal_error(error):
-     return render_template('404.html'), 404
+    return render_template('404.html'), 404
+
 
 @app.errorhandler(500)
 def internal_error(error):
-     return render_template('500.html'), 500
+    return render_template('500.html'), 500
+
 
 @app.errorhandler(503)
 def internal_error(error):
-     return render_template('503.html'), 503
+    return render_template('503.html'), 503
+
 
 if __name__ == "__main__":
     my_host = "127.0.0.1"
@@ -104,6 +115,7 @@ if __name__ == "__main__":
     @login_manager.user_loader
     def load_user(id):
         return User.query.get(int(id))
+
 
     # BLUEPRINTS
     # import blueprints
