@@ -1,7 +1,27 @@
 # IMPORTS
+import logging
 import socket
-from flask import Flask, render_template
+from flask_login import LoginManager, current_user
+from flask import Flask, render_template, request
 from flask_sqlalchemy import SQLAlchemy
+from functools import wraps
+from flask_talisman import Talisman
+
+# LOGGING
+class SecurityFilter(logging.Filter):
+    def filter(self, record):
+        return "SECURITY" in record.getMessage()
+
+
+fh = logging.FileHandler('lottery.log', 'w')
+fh.setLevel(logging.WARNING)
+fh.addFilter(SecurityFilter())
+formatter = logging.Formatter('%(asctime)s : %(message)s', '%m/%d/%Y %I:%M:%S %p')
+fh.setFormatter(formatter)
+
+logger = logging.getLogger('')
+logger.propagate = False
+logger.addHandler(fh)
 
 # CONFIG
 app = Flask(__name__)
@@ -11,6 +31,34 @@ app.config['SECRET_KEY'] = 'LongAndRandomSecretKey'
 
 # initialise database
 db = SQLAlchemy(app)
+
+csp = {
+    'default-src': [
+        '\'self\'',
+        'https://cdnjs.cloudflare.com/ajax/libs/bulma/0.7.2/css/bulma.min.css'
+    ],
+    'script-src': [
+        '\'self\'',
+        '\'unsafe-inline\''
+    ]
+}
+talisman = Talisman(app, content_security_policy=csp)
+
+def requires_roles(*roles):
+    def wrapper(f):
+        @wraps(f)
+        def wrapped(*args, **kwargs):
+            if current_user.role not in roles:
+                logging.warning('SECURITY - Unauthorised access attempt [%s, %s, %s, %s]',
+                             current_user.id,
+                             current_user.email,
+                             current_user.role,
+                             request.remote_addr)
+                # Redirect the user to an unauthorised notice!
+                return render_template('403.html')
+            return f(*args, **kwargs)
+        return wrapped
+    return wrapper
 
 
 # HOME PAGE VIEW
@@ -45,6 +93,17 @@ if __name__ == "__main__":
     free_socket.listen(5)
     free_port = free_socket.getsockname()[1]
     free_socket.close()
+
+    login_manager = LoginManager()
+    login_manager.login_view = 'users.login'
+    login_manager.init_app(app)
+
+    from models import User
+
+
+    @login_manager.user_loader
+    def load_user(id):
+        return User.query.get(int(id))
 
     # BLUEPRINTS
     # import blueprints
